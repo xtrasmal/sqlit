@@ -70,16 +70,21 @@ The keybindings are shown at the bottom of the screen.
 
 ```bash
 # Run a query
-sqlit query -c "MyServer" -q "SELECT * FROM Users"
+sqlit query -c "MyConnection" -q "SELECT * FROM Users"
 
 # Output as CSV or JSON
-sqlit query -c "MyServer" -q "SELECT * FROM Users" --format csv
-sqlit query -c "MyServer" -f "script.sql" --format json
+sqlit query -c "MyConnection" -q "SELECT * FROM Users" --format csv
+sqlit query -c "MyConnection" -f "script.sql" --format json
+
+# Create connections for different databases
+sqlit connection create --name "MySqlServer" --db-type mssql --server "localhost" --auth-type sql
+sqlit connection create --name "MyPostgres" --db-type postgresql --server "localhost" --username "user" --password "pass"
+sqlit connection create --name "MyMySQL" --db-type mysql --server "localhost" --username "user" --password "pass"
+sqlit connection create --name "MyLocalDB" --db-type sqlite --file-path "/path/to/database.db"
 
 # Manage connections
 sqlit connection list
-sqlit connection create --name "MyServer" --server "localhost" --auth-type sql
-sqlit connection delete "MyServer"
+sqlit connection delete "MyConnection"
 ```
 
 ## Keybindings
