@@ -46,21 +46,11 @@ sqlit is a lightweight database TUI that is easy to use and beautiful to look at
 ## Installation
 
 ### Method 1: `pipx` (Recommended)
-
-1.  **Install pipx:** If you don't have pipx, you can install it with:
-    ```bash
-    python3 -m pip install --user pipx
-    python3 -m pipx ensurepath
-    ```
-
-2.  **Install sqlit-tui:**
     ```bash
     pipx install sqlit-tui
     ```
 
 ### Method 2: `uv`
-
-`uv` is a fast, modern installer. This also keeps things isolated and makes optional drivers easy.
 
 ```bash
 uv tool install sqlit-tui
