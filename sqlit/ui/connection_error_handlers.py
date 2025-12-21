@@ -22,12 +22,12 @@ class ConnectionErrorHandler(Protocol):
 @dataclass(frozen=True)
 class MissingDriverHandler:
     def can_handle(self, error: Exception) -> bool:
-        from ...db.exceptions import MissingDriverError
+        from ..db.exceptions import MissingDriverError
 
         return isinstance(error, MissingDriverError)
 
     def handle(self, app: AppProtocol, error: Exception, config: ConnectionConfig) -> None:
-        from ...services.installer import Installer
+        from ..services.installer import Installer
         from ..screens import PackageSetupScreen
 
         app.push_screen(
@@ -38,13 +38,13 @@ class MissingDriverHandler:
 @dataclass(frozen=True)
 class MissingOdbcDriverHandler:
     def can_handle(self, error: Exception) -> bool:
-        from ...db.exceptions import MissingODBCDriverError
+        from ..db.exceptions import MissingODBCDriverError
 
         return isinstance(error, MissingODBCDriverError)
 
     def handle(self, app: AppProtocol, error: Exception, config: ConnectionConfig) -> None:
-        from ...config import save_connections
-        from ...terminal import run_in_terminal
+        from ..config import save_connections
+        from ..terminal import run_in_terminal
         from ..screens import ConfirmScreen, DriverSetupScreen, MessageScreen
 
         def on_confirm(confirmed: bool | None) -> None:
