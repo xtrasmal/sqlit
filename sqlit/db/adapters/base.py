@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib
-import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
@@ -96,17 +95,6 @@ class DatabaseAdapter(ABC):
 
     def ensure_driver_available(self) -> None:
         """Verify required dependencies can be imported, raising MissingDriverError if not."""
-        forced_missing = os.environ.get("SQLIT_MOCK_MISSING_DRIVERS", "").strip()
-        if forced_missing:
-            forced = {s.strip() for s in forced_missing.split(",") if s.strip()}
-            db_type = getattr(self, "_db_type", None)
-            if db_type in forced:
-                from ...db.exceptions import MissingDriverError
-
-                if not self.install_extra or not self.install_package:
-                    raise ImportError(f"Missing driver for {self.name}")
-                raise MissingDriverError(self.name, self.install_extra, self.install_package)
-
         if not self.driver_import_names:
             return
         try:
