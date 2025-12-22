@@ -351,6 +351,11 @@ class TreeMixin:
             if self._get_node_kind(child) == "loading":
                 child.remove()
 
+        if not columns:
+            empty_child = node.add_leaf("[dim](Empty)[/]")
+            empty_child.data = LoadingNode()
+            return
+
         for col in columns:
             col_name = escape_markup(col.name)
             col_type = escape_markup(col.data_type)
@@ -418,6 +423,10 @@ class TreeMixin:
             return
 
         adapter = self._session.adapter
+        if not items:
+            empty_child = node.add_leaf("[dim](Empty)[/]")
+            empty_child.data = LoadingNode()
+            return
 
         if folder_type in ("tables", "views"):
             self._add_schema_grouped_items(node, db_name, folder_type, items, adapter.default_schema)

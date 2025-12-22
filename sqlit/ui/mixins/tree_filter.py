@@ -18,6 +18,9 @@ class TreeFilterMixin:
 
     _tree_filter_visible: bool = False
     _tree_filter_text: str = ""
+    _tree_filter_query: str = ""
+    _tree_filter_fuzzy: bool = False
+    _tree_filter_typing: bool = False
     _tree_filter_matches: list[Any] = []
     _tree_filter_match_index: int = 0
     _tree_original_labels: dict[int, str] = {}
@@ -29,6 +32,9 @@ class TreeFilterMixin:
 
         self._tree_filter_visible = True
         self._tree_filter_text = ""
+        self._tree_filter_query = ""
+        self._tree_filter_fuzzy = False
+        self._tree_filter_typing = True
         self._tree_filter_matches = []
         self._tree_filter_match_index = 0
         self._tree_original_labels = {}
@@ -41,14 +47,19 @@ class TreeFilterMixin:
         """Close the tree filter and restore tree."""
         self._tree_filter_visible = False
         self._tree_filter_text = ""
+        self._tree_filter_query = ""
+        self._tree_filter_fuzzy = False
+        self._tree_filter_typing = False
         self.tree_filter_input.hide()
         self._restore_tree_labels()
         self._show_all_tree_nodes()
         self._update_footer_bindings()
 
     def action_tree_filter_accept(self: AppProtocol) -> None:
-        """Accept current filter selection and close."""
-        self.action_tree_filter_close()
+        """Accept current filter selection and switch to navigation mode."""
+        self._tree_filter_typing = False
+        self.tree_filter_input.hide()
+        self._update_footer_bindings()
 
     def action_tree_filter_next(self: AppProtocol) -> None:
         """Move to next filter match."""
@@ -97,15 +108,40 @@ class TreeFilterMixin:
             return
 
         key = event.key
+        if key == "enter":
+            self.action_tree_filter_accept()
+            event.prevent_default()
+            event.stop()
+            return
+
+        if not self._tree_filter_typing:
+            if key in ("n", "j"):
+                self.action_tree_filter_next()
+                event.prevent_default()
+                event.stop()
+                return
+
+            if key in ("N", "k"):
+                self.action_tree_filter_prev()
+                event.prevent_default()
+                event.stop()
+                return
+
+            if key == "/":
+                self.action_tree_filter()
+                event.prevent_default()
+                event.stop()
+                return
 
         # Handle backspace
         if key == "backspace":
-            if self._tree_filter_text:
-                self._tree_filter_text = self._tree_filter_text[:-1]
-                self._update_tree_filter()
-            else:
-                # Exit filter when backspacing with no text
-                self.action_tree_filter_close()
+            if self._tree_filter_typing:
+                if self._tree_filter_text:
+                    self._tree_filter_text = self._tree_filter_text[:-1]
+                    self._update_tree_filter()
+                else:
+                    # Exit filter when backspacing with no text
+                    self.action_tree_filter_close()
             event.prevent_default()
             event.stop()
             return
@@ -114,6 +150,14 @@ class TreeFilterMixin:
         # event.key might be "shift+?" but event.character will be "?"
         char = getattr(event, "character", None)
         if char and char.isprintable():
+            if char == "/" and not self._tree_filter_typing:
+                self.action_tree_filter()
+                event.prevent_default()
+                event.stop()
+                return
+            if not self._tree_filter_typing:
+                super().on_key(event)  # type: ignore[misc]
+                return
             self._tree_filter_text += char
             self._update_tree_filter()
             event.prevent_default()
@@ -127,8 +171,11 @@ class TreeFilterMixin:
         """Update the tree based on current filter text."""
         self._restore_tree_labels()
         total = self._count_all_nodes()
+        raw_text = self._tree_filter_text
+        self._tree_filter_fuzzy = raw_text.startswith("~")
+        self._tree_filter_query = raw_text[1:] if self._tree_filter_fuzzy else raw_text
 
-        if not self._tree_filter_text:
+        if not self._tree_filter_query:
             self._show_all_tree_nodes()
             self._tree_filter_matches = []
             self.tree_filter_input.set_filter("", 0, total)
@@ -171,7 +218,15 @@ class TreeFilterMixin:
         # Get node label text for matching
         label_text = self._get_node_label_text(node)
         if label_text:
-            matched, indices = fuzzy_match(self._tree_filter_text, label_text)
+            if self._tree_filter_fuzzy:
+                matched, indices = fuzzy_match(self._tree_filter_query, label_text)
+            else:
+                label_lower = label_text.lower()
+                query_lower = self._tree_filter_query.lower()
+                start = label_lower.find(query_lower)
+                matched = start >= 0
+                indices = list(range(start, start + len(self._tree_filter_query))) if matched else []
+
             if matched:
                 node_matches = True
                 matches.append(node)
@@ -231,12 +286,12 @@ class TreeFilterMixin:
             child_id = id(child)
             is_match = child_id in match_ids
             is_ancestor = child_id in ancestor_ids
-            should_show = is_match or is_ancestor or not self._tree_filter_text
+            should_show = is_match or is_ancestor or not self._tree_filter_query
 
             # Use display style to hide/show
             # Note: Textual Tree doesn't have per-node visibility,
             # so we'll dim non-matching nodes instead
-            if not should_show and self._tree_filter_text:
+            if not should_show and self._tree_filter_query:
                 # Dim non-matching nodes
                 original = self._tree_original_labels.get(child_id, str(child.label))
                 if child_id not in self._tree_original_labels:
