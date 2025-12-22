@@ -13,7 +13,6 @@
 <p align="center">
   <a href="https://www.buymeacoffee.com/PeterAdams"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" width="200"></a>
 </p>
----
 
 ### Connect
 Sqlit supports all major DBMS's: SQL Server, PostgreSQL, MySQL, SQLite, MariaDB, FirebirdSQL, Oracle, DuckDB, CockroachDB, ClickHouse, Snowflake, Supabase, CloudFlare D1 and Turso.
