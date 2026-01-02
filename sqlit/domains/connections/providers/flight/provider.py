@@ -33,7 +33,6 @@ SPEC = ProviderSpec(
             "database": ("SQLFLITE_DATABASE", "FLIGHT_DATABASE"),
         },
         default_user="",
-        default_port=31337,
     ),
 )
 
