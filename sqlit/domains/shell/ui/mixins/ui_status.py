@@ -113,6 +113,36 @@ class UIStatusMixin:
         set_title(pane_query, "q", "Query", active=active_pane == "query")
         set_title(pane_results, "r", "Results", active=active_pane == "results")
 
+    def _update_vim_mode_visuals(self: UINavigationMixinHost) -> None:
+        """Update all visual indicators based on current vim mode.
+
+        This updates:
+        - Border color on query pane (orange for NORMAL, green for INSERT)
+        - Cursor color (via CSS class)
+        - Status bar mode indicator
+
+        Only shows vim mode indicators when query pane has focus.
+        """
+        from sqlit.core.vim import VimMode
+
+        try:
+            query_area = self.query_one("#query-area")
+            has_query_focus = self.query_input.has_focus
+        except Exception:
+            return
+
+        # Update CSS classes for border and cursor color
+        # Only show vim mode colors when query pane has focus
+        query_area.remove_class("vim-normal", "vim-insert")
+        if has_query_focus:
+            if self.vim_mode == VimMode.NORMAL:
+                query_area.add_class("vim-normal")
+            else:
+                query_area.add_class("vim-insert")
+
+        # Also update the status bar
+        self._update_status_bar()
+
     def _update_status_bar(self: UINavigationMixinHost) -> None:
         """Update status bar with connection and vim mode info."""
         from sqlit.core.vim import VimMode
@@ -132,9 +162,7 @@ class UIStatusMixin:
 
         connecting_config = getattr(self, "_connecting_config", None)
 
-        if getattr(self, "_query_executing", False):
-            conn_info = ""
-        elif connecting_config is not None:
+        if connecting_config is not None:
             connect_spinner = getattr(self, "_connect_spinner", None)
             spinner = connect_spinner.frame if connect_spinner else SPINNER_FRAMES[0]
             source_emoji = connecting_config.get_source_emoji()
@@ -142,9 +170,8 @@ class UIStatusMixin:
         elif getattr(self, "_connection_failed", False):
             conn_info = "[#ff6b6b]Connection failed[/]"
         elif self.current_config:
-            display_info = get_connection_display_info(self.current_config)
             source_emoji = self.current_config.get_source_emoji()
-            conn_info = f"[#4ADE80]Connected to {source_emoji}{self.current_config.name}[/] ({display_info})"
+            conn_info = f"[#4ADE80]Connected to {source_emoji}{self.current_config.name}[/]"
             if direct_active:
                 conn_info += " [dim](direct, not saved)[/]"
         else:
@@ -159,21 +186,6 @@ class UIStatusMixin:
             if getattr(self, "_debug_mode", False) or getattr(self, "_debug_idle_scheduler", False):
                 status_parts.append(f"[bold cyan]{schema_spinner.frame} Indexing...[/]")
 
-        # Check if query is executing
-        query_spinner = getattr(self, "_query_spinner", None)
-        if query_spinner and query_spinner.running:
-            import time
-
-            from sqlit.shared.core.utils import format_duration_ms
-
-            start_time = getattr(self, "_query_start_time", None)
-            if start_time:
-                elapsed_ms = (time.perf_counter() - start_time) * 1000
-                elapsed_str = format_duration_ms(elapsed_ms, always_seconds=True)
-                status_parts.append(f"[bold yellow]{query_spinner.frame} Executing [{elapsed_str}][/] [dim]^z to cancel[/]")
-            else:
-                status_parts.append(f"[bold yellow]{query_spinner.frame} Executing[/] [dim]^z to cancel[/]")
-
         # Check if in a transaction
         if getattr(self, "in_transaction", False):
             status_parts.append("[bold magenta]⚡ TRANSACTION[/]")
@@ -182,18 +194,23 @@ class UIStatusMixin:
         if status_str:
             status_str += "  "
 
-        # Build left side content
+        # Build left side content - mode indicator is always preserved
+        mode_str = ""
+        mode_plain = ""
         try:
             if self.query_input.has_focus:
                 if self.vim_mode == VimMode.NORMAL:
-                    mode_str = f"[bold orange1]-- {self.vim_mode.value} --[/]"
+                    # Warm beige background for NORMAL mode
+                    mode_str = "[bold #1e1e1e on #D8C499] NORMAL [/]  "
+                    mode_plain = " NORMAL   "
                 else:
-                    mode_str = f"[dim]-- {self.vim_mode.value} --[/]"
-                left_content = f"{status_str}{mode_str}  {conn_info}"
-            else:
-                left_content = f"{status_str}{conn_info}"
+                    # Soft green background for INSERT mode
+                    mode_str = "[bold #1e1e1e on #91C58D] INSERT [/]  "
+                    mode_plain = " INSERT   "
         except Exception:
-            left_content = f"{status_str}{conn_info}"
+            pass
+
+        left_content = f"{status_str}{mode_str}{conn_info}"
 
         notification = getattr(self, "_last_notification", "")
         timestamp = getattr(self, "_last_notification_time", "")
@@ -212,11 +229,43 @@ class UIStatusMixin:
         right_str = launch_str
         right_plain = launch_plain
 
-        if notification:
-            # Normal/warning notifications on right side
-            import re
+        import re
 
-            left_plain = re.sub(r"\[.*?\]", "", left_content)
+        try:
+            total_width = self.size.width - 2
+        except Exception:
+            total_width = 80
+
+        left_plain = re.sub(r"\[.*?\]", "", left_content)
+
+        # Build right side content - executing status takes priority over notification
+        if getattr(self, "_query_executing", False):
+            query_spinner = getattr(self, "_query_spinner", None)
+            if query_spinner and query_spinner.running:
+                import time
+
+                from sqlit.shared.core.utils import format_duration_ms
+
+                start_time = getattr(self, "_query_start_time", None)
+                if start_time:
+                    elapsed_ms = (time.perf_counter() - start_time) * 1000
+                    elapsed_str = format_duration_ms(elapsed_ms, always_seconds=True)
+                    right_content = f"[bold yellow]{query_spinner.frame} Executing [{elapsed_str}][/] [dim]^z to cancel[/]"
+                    right_content_plain = f"  Executing [{elapsed_str}] ^z to cancel"
+                else:
+                    right_content = f"[bold yellow]{query_spinner.frame} Executing[/] [dim]^z to cancel[/]"
+                    right_content_plain = "  Executing ^z to cancel"
+            else:
+                right_content = "[bold yellow]Executing...[/]"
+                right_content_plain = "Executing..."
+
+            gap = total_width - len(left_plain) - len(right_content_plain)
+            if gap > 2:
+                status.update(f"{left_content}{' ' * gap}{right_content}")
+            else:
+                status.update(f"{left_content}  {right_content}")
+        elif notification:
+            # Show notification right-aligned
             time_prefix = f"[dim]{timestamp}[/] " if timestamp else ""
 
             if severity == "warning":
@@ -225,26 +274,12 @@ class UIStatusMixin:
                 notif_str = f"{time_prefix}{notification}"
 
             notif_plain = f"{timestamp} {notification}" if timestamp else notification
-
-            try:
-                total_width = self.size.width - 2
-            except Exception:
-                total_width = 80
-
             gap = total_width - len(left_plain) - len(notif_plain)
             if gap > 2:
                 status.update(f"{left_content}{' ' * gap}{notif_str}")
             else:
-                status.update(notif_str)
+                status.update(f"{left_content}  {notif_str}")
         elif right_str:
-            import re
-
-            left_plain = re.sub(r"\[.*?\]", "", left_content)
-            try:
-                total_width = self.size.width - 2
-            except Exception:
-                total_width = 80
-
             gap = total_width - len(left_plain) - len(right_plain)
             if gap > 2:
                 status.update(f"{left_content}{' ' * gap}{right_str}")

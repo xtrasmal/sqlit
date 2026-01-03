@@ -461,7 +461,7 @@ class QueryEditingOperatorsMixin:
         self.query_input.read_only = False
         self.query_input.focus()
         self._update_footer_bindings()
-        self._update_status_bar()
+        self._update_vim_mode_visuals()
 
     def action_change_line(self: QueryMixinHost) -> None:
         """Change the current line (cc)."""

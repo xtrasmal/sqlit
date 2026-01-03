@@ -570,7 +570,7 @@ class ResultsMixin:
         from sqlit.core.vim import VimMode
         self.vim_mode = VimMode.INSERT
         self.query_input.read_only = False
-        self._update_status_bar()
+        self._update_vim_mode_visuals()
         self._update_footer_bindings()
 
     # Stacked results navigation

@@ -112,6 +112,19 @@
         border-title-color: $primary;
     }
 
+    /* Vim mode cursor styling */
+    #query-area.vim-normal TextArea > .text-area--cursor {
+        /* Block cursor for NORMAL mode - warm beige */
+        background: #D8C499;
+        color: $surface;
+    }
+
+    #query-area.vim-insert TextArea > .text-area--cursor {
+        /* Cursor for INSERT mode - soft green */
+        background: #91C58D;
+        color: $surface;
+    }
+
 
     #results-area DataTable {
         height: 1fr;

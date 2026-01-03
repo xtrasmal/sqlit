@@ -58,7 +58,7 @@ class UINavigationMixin(UIStatusMixin, UILeaderMixin):
         self.vim_mode = VimMode.NORMAL
         self.query_input.read_only = True
         self.query_input.focus()
-        self._update_status_bar()
+        self._update_vim_mode_visuals()
 
     def action_focus_results(self: UINavigationMixinHost) -> None:
         """Focus the Results pane."""
@@ -94,7 +94,7 @@ class UINavigationMixin(UIStatusMixin, UILeaderMixin):
         if self.query_input.has_focus and self.vim_mode == VimMode.NORMAL:
             self.vim_mode = VimMode.INSERT
             self.query_input.read_only = False
-            self._update_status_bar()
+            self._update_vim_mode_visuals()
             self._update_footer_bindings()
 
     def action_exit_insert_mode(self: UINavigationMixinHost) -> None:
@@ -105,7 +105,7 @@ class UINavigationMixin(UIStatusMixin, UILeaderMixin):
             self.vim_mode = VimMode.NORMAL
             self.query_input.read_only = True
             self._hide_autocomplete()
-            self._update_status_bar()
+            self._update_vim_mode_visuals()
             self._update_footer_bindings()
 
     def action_toggle_explorer(self: UINavigationMixinHost) -> None:
@@ -183,7 +183,7 @@ class UINavigationMixin(UIStatusMixin, UILeaderMixin):
             except Exception:
                 pass
         self._update_footer_bindings()
-        self._update_status_bar()
+        self._update_vim_mode_visuals()
 
     def on_descendant_blur(self: UINavigationMixinHost, event: Any) -> None:
         """Handle blur to update section labels."""

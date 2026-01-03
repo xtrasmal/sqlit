@@ -401,6 +401,7 @@ class SSMSTUI(
                         yield QueryTextArea(
                             "",
                             language="sql",
+                            theme="css",
                             id="query-input",
                             read_only=True,
                         )
