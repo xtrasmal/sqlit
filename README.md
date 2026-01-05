@@ -185,6 +185,22 @@ sqlit connections delete "MyConnection"
 | `Ctrl+Q` | Quit |
 | `?` | Help |
 
+### Vim Motions (Query Editor, NORMAL mode)
+
+Use with operators like `y`, `d`, `c` (e.g. `dw`, `y$`).
+
+| Motion | Action |
+|--------|--------|
+| `h` / `j` / `k` / `l` | Move cursor left / down / up / right |
+| `w` / `W` | Next word / WORD |
+| `b` / `B` | Previous word / WORD |
+| `e` / `E` | End of word / WORD |
+| `0` / `$` | Line start / end |
+| `gg` / `G` | File start / end |
+| `f{c}` / `F{c}` | Find char forward / backward |
+| `t{c}` / `T{c}` | Till char forward / backward |
+| `%` | Matching bracket |
+
 ### Commands Menu (`<space>`)
 
 | Key | Action |
