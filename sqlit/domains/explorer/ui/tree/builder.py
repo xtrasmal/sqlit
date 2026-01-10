@@ -8,6 +8,7 @@ from rich.markup import escape as escape_markup
 
 from sqlit.domains.connections.providers.metadata import get_connection_display_info
 from sqlit.domains.explorer.domain.tree_nodes import ConnectionFolderNode, ConnectionNode, FolderNode
+from sqlit.domains.explorer.ui.tree.expansion_state import restore_subtree_expansion
 from sqlit.shared.ui.protocols import TreeMixinHost
 
 MIN_TIMER_DELAY_S = 0.001
@@ -233,6 +234,8 @@ def refresh_tree(host: TreeMixinHost) -> None:
             spinner=connecting_spinner,
         )
 
+    restore_subtree_expansion(host, host.object_tree.root)
+
     if host.current_connection is not None and host.current_config is not None:
         populate_connected_tree(host)
 
@@ -329,6 +332,7 @@ def refresh_tree_chunked(
             )
 
         def finish_sync() -> None:
+            restore_subtree_expansion(host, host.object_tree.root)
             schedule_populate()
 
         host.set_timer(MIN_TIMER_DELAY_S, finish_sync)
@@ -358,11 +362,94 @@ def refresh_tree_chunked(
             return
 
         def finish() -> None:
+            restore_subtree_expansion(host, host.object_tree.root)
             schedule_populate()
 
         host.set_timer(MIN_TIMER_DELAY_S, finish)
 
     add_batch()
+
+
+def update_connection_state(
+    host: TreeMixinHost,
+    old_config: Any | None,
+    new_config: Any | None,
+) -> None:
+    """Update tree to reflect connection state change without full rebuild.
+
+    This is more efficient than refresh_tree when only the connection state changes.
+    """
+    # Update old connected node to idle state
+    if old_config is not None:
+        old_node = _find_connection_node(host, old_config)
+        if old_node is not None:
+            label = host._format_connection_label(old_config, "idle")
+            old_node.set_label(label)
+            old_node.allow_expand = False
+            old_node.remove_children()
+
+    # Update new connected node and populate it
+    if new_config is not None and host.current_connection is not None:
+        populate_connected_tree(host)
+
+
+def remove_connection_nodes(host: TreeMixinHost, names: set[str]) -> None:
+    """Remove connection nodes from the tree without full rebuild.
+
+    Also cleans up any empty connection folders that result from the removal.
+    """
+    if not names:
+        return
+
+    # Find and remove the connection nodes
+    nodes_to_remove: list[Any] = []
+    stack = [host.object_tree.root]
+    while stack:
+        node = stack.pop()
+        for child in node.children:
+            if host._get_node_kind(child) == "connection":
+                data = getattr(child, "data", None)
+                node_config = getattr(data, "config", None)
+                if node_config and node_config.name in names:
+                    nodes_to_remove.append(child)
+            stack.append(child)
+
+    # Remove the nodes
+    for node in nodes_to_remove:
+        try:
+            node.remove()
+        except Exception:
+            pass
+
+    # Clean up empty connection folders
+    _cleanup_empty_folders(host)
+
+
+def _cleanup_empty_folders(host: TreeMixinHost) -> None:
+    """Remove any empty connection folder nodes."""
+    # Keep cleaning until no more empty folders found (handles nested folders)
+    while True:
+        empty_folders: list[Any] = []
+        stack = [host.object_tree.root]
+        while stack:
+            node = stack.pop()
+            for child in node.children:
+                if host._get_node_kind(child) == "connection_folder":
+                    if not child.children:
+                        empty_folders.append(child)
+                    else:
+                        stack.append(child)
+                else:
+                    stack.append(child)
+
+        if not empty_folders:
+            break
+
+        for folder in empty_folders:
+            try:
+                folder.remove()
+            except Exception:
+                pass
 
 
 def populate_connected_tree(host: TreeMixinHost) -> None:
@@ -380,11 +467,13 @@ def populate_connected_tree(host: TreeMixinHost) -> None:
         db_type_label = host._db_type_badge(config.db_type)
         escaped_name = escape_markup(config.name)
         source_emoji = config.get_source_emoji() if hasattr(config, "get_source_emoji") else ""
+        selected = getattr(host, "_selected_connection_names", set())
+        selected_prefix = "[bright_cyan][x][/] " if config.name in selected else ""
         favorite_prefix = "[bright_yellow]*[/] " if getattr(config, "favorite", False) else ""
         if connected:
-            name = f"{favorite_prefix}[#4ADE80]• {source_emoji}{escaped_name}[/]"
+            name = f"{selected_prefix}{favorite_prefix}[#4ADE80]• {source_emoji}{escaped_name}[/]"
         else:
-            name = f"{favorite_prefix}{source_emoji}{escaped_name}"
+            name = f"{selected_prefix}{favorite_prefix}{source_emoji}{escaped_name}"
         return f"{name} [{db_type_label}] ({display_info})"
 
     active_node = _find_connection_node(host, host.current_config)

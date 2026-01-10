@@ -292,6 +292,10 @@ class DefaultKeymapProvider(KeymapProvider):
         return [
             # Tree actions
             ActionKeyDef("n", "new_connection", "tree"),
+            ActionKeyDef("v", "enter_tree_visual_mode", "tree"),
+            ActionKeyDef("escape", "exit_tree_visual_mode", "tree_visual"),
+            ActionKeyDef("v", "exit_tree_visual_mode", "tree_visual", primary=False),
+            ActionKeyDef("escape", "clear_connection_selection", "tree"),
             ActionKeyDef("s", "select_table", "tree"),
             ActionKeyDef("f", "refresh_tree", "tree"),
             ActionKeyDef("R", "refresh_tree", "tree", primary=False),
@@ -307,7 +311,9 @@ class DefaultKeymapProvider(KeymapProvider):
             ActionKeyDef("x", "disconnect", "tree"),
             ActionKeyDef("z", "collapse_tree", "tree"),
             ActionKeyDef("j", "tree_cursor_down", "tree"),
+            ActionKeyDef("down", "tree_cursor_down", "tree", primary=False),
             ActionKeyDef("k", "tree_cursor_up", "tree"),
+            ActionKeyDef("up", "tree_cursor_up", "tree", primary=False),
             ActionKeyDef("slash", "tree_filter", "tree"),
             ActionKeyDef("escape", "tree_filter_close", "tree_filter"),
             ActionKeyDef("enter", "tree_filter_accept", "tree_filter"),
