@@ -286,6 +286,10 @@ class DefaultKeymapProvider(KeymapProvider):
             # rye results export menu
             LeaderCommandDef("c", "csv", "Export as CSV", "Export", menu="rye"),
             LeaderCommandDef("j", "json", "Export as JSON", "Export", menu="rye"),
+            # vy value view yank menu (tree mode)
+            LeaderCommandDef("y", "value", "Copy value", "Copy", menu="vy"),
+            LeaderCommandDef("f", "field", "Copy field", "Copy", menu="vy"),
+            LeaderCommandDef("a", "all", "Copy all", "Copy", menu="vy"),
         ]
 
     def _build_action_keys(self) -> list[ActionKeyDef]:
@@ -380,6 +384,8 @@ class DefaultKeymapProvider(KeymapProvider):
             ActionKeyDef("q", "close_value_view", "value_view"),
             ActionKeyDef("escape", "close_value_view", "value_view"),
             ActionKeyDef("y", "copy_value_view", "value_view"),
+            ActionKeyDef("t", "toggle_value_view_mode", "value_view"),
+            ActionKeyDef("z", "collapse_all_json_nodes", "value_view"),
         ]
 
 

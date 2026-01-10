@@ -20,6 +20,8 @@ def make_context(**overrides: object) -> InputContext:
         "autocomplete_visible": False,
         "results_filter_active": False,
         "value_view_active": False,
+        "value_view_tree_mode": False,
+        "value_view_is_json": False,
         "query_executing": False,
         "modal_open": False,
         "has_connection": False,
@@ -139,3 +141,41 @@ class TestStateMachineActionValidation:
         assert "toggle_connection_favorite" in actions
         assert "move_connection_to_folder" in actions
         assert "delete_connection" in actions
+
+
+class TestValueViewStates:
+    """Test that value view states correctly gate actions based on content type."""
+
+    def test_toggle_blocked_for_non_json(self):
+        """toggle_value_view_mode should be blocked when content is not JSON."""
+        sm = UIStateMachine()
+        ctx = make_context(value_view_active=True, value_view_is_json=False)
+
+        assert sm.check_action(ctx, "toggle_value_view_mode") is False
+
+    def test_toggle_allowed_for_json(self):
+        """toggle_value_view_mode should be allowed when content is JSON."""
+        sm = UIStateMachine()
+        ctx = make_context(value_view_active=True, value_view_is_json=True)
+
+        assert sm.check_action(ctx, "toggle_value_view_mode") is True
+
+    def test_collapse_all_only_in_tree_mode(self):
+        """collapse_all_json_nodes should only be allowed in tree mode."""
+        sm = UIStateMachine()
+
+        # Tree mode - allowed
+        ctx = make_context(
+            value_view_active=True,
+            value_view_is_json=True,
+            value_view_tree_mode=True,
+        )
+        assert sm.check_action(ctx, "collapse_all_json_nodes") is True
+
+        # Syntax mode - blocked
+        ctx = make_context(
+            value_view_active=True,
+            value_view_is_json=True,
+            value_view_tree_mode=False,
+        )
+        assert sm.check_action(ctx, "collapse_all_json_nodes") is False
