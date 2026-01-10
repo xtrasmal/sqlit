@@ -20,11 +20,6 @@ class TreeVisualModeState(State):
         # Block entering visual mode when already in visual mode
         self.forbids("enter_tree_visual_mode")
         self.allows(
-            "toggle_connection_favorite",
-            label="Star",
-            help="Star selected connections",
-        )
-        self.allows(
             "move_connection_to_folder",
             label="Move",
             help="Move selected connections",
@@ -57,14 +52,6 @@ class TreeVisualModeState(State):
             )
         )
         seen.add("exit_tree_visual_mode")
-        left.append(
-            DisplayBinding(
-                key=resolve_display_key("toggle_connection_favorite") or "*",
-                label="Star",
-                action="toggle_connection_favorite",
-            )
-        )
-        seen.add("toggle_connection_favorite")
         left.append(
             DisplayBinding(
                 key=resolve_display_key("move_connection_to_folder") or "m",

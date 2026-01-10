@@ -18,11 +18,6 @@ class TreeMultiSelectState(State):
             help="Clear selection",
         )
         self.allows(
-            "toggle_connection_favorite",
-            label="Star",
-            help="Star selected connections",
-        )
-        self.allows(
             "move_connection_to_folder",
             label="Move",
             help="Move selected connections",
@@ -45,14 +40,6 @@ class TreeMultiSelectState(State):
             )
         )
         seen.add("clear_connection_selection")
-        left.append(
-            DisplayBinding(
-                key=resolve_display_key("toggle_connection_favorite") or "*",
-                label="Star",
-                action="toggle_connection_favorite",
-            )
-        )
-        seen.add("toggle_connection_favorite")
         left.append(
             DisplayBinding(
                 key=resolve_display_key("move_connection_to_folder") or "m",

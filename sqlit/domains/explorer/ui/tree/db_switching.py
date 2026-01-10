@@ -89,13 +89,15 @@ def set_default_database(host: TreeMixinHost, db_name: str | None) -> None:
 
 
 def update_database_labels(host: TreeMixinHost) -> None:
-    """Update database node labels to show the active database with a star."""
+    """Update database node labels to highlight the active database with primary color."""
     if not host.current_config or not host.current_provider:
         return
 
     active_db = None
     if hasattr(host, "_get_effective_database"):
         active_db = host._get_effective_database()
+
+    primary = getattr(getattr(host, "current_theme", None), "primary", "#7E9CD8")
 
     target_node = None
     stack = [host.object_tree.root]
@@ -127,7 +129,7 @@ def update_database_labels(host: TreeMixinHost) -> None:
                         continue
                     is_active = active_db and db_name.lower() == active_db.lower()
                     if is_active:
-                        db_node.set_label(f"[#4ADE80]* {escape_markup(db_name)}[/]")
+                        db_node.set_label(f"[{primary}]{escape_markup(db_name)}[/]")
                     else:
                         db_node.set_label(escape_markup(db_name))
             break

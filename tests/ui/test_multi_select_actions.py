@@ -22,23 +22,6 @@ def _make_app(connections: list) -> SSMSTUI:
 
 class TestMultiSelectActions:
     @pytest.mark.asyncio
-    async def test_star_clears_selection(self):
-        connections = [
-            create_test_connection("Alpha", "sqlite"),
-            create_test_connection("Bravo", "sqlite"),
-        ]
-        app = _make_app(connections)
-
-        async with app.run_test(size=(100, 35)) as pilot:
-            await pilot.pause()
-            app._selected_connection_names = {"Alpha", "Bravo"}
-
-            app.action_toggle_connection_favorite()
-            await pilot.pause()
-
-            assert not app._selected_connection_names
-
-    @pytest.mark.asyncio
     async def test_move_clears_selection(self):
         connections = [
             create_test_connection("Alpha", "sqlite"),

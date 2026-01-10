@@ -57,19 +57,6 @@ def test_from_dict_legacy_file_path() -> None:
     assert config.file_endpoint.path == "/tmp/test.db"
 
 
-def test_from_dict_favorite_flag() -> None:
-    data = {
-        "name": "fav-conn",
-        "db_type": "sqlite",
-        "favorite": True,
-        "options": {},
-    }
-
-    config = ConnectionConfig.from_dict(data)
-
-    assert config.favorite is True
-
-
 def test_from_dict_folder_path_normalized() -> None:
     data = {
         "name": "foldered",

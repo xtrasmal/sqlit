@@ -28,10 +28,7 @@ def _sort_connections_for_display(connections: list[Any]) -> list[Any]:
 
     ordered: list[Any] = []
     for folder_path in order:
-        items = grouped[folder_path]
-        favorites = [c for c in items if getattr(c, "favorite", False)]
-        others = [c for c in items if not getattr(c, "favorite", False)]
-        ordered.extend(favorites + others)
+        ordered.extend(grouped[folder_path])
     return ordered
 
 
@@ -60,10 +57,11 @@ def _find_connection_folder_child(host: TreeMixinHost, parent: Any, name: str) -
 
 def _ensure_connection_folder_path(host: TreeMixinHost, folder_parts: list[str]) -> Any:
     parent = host.object_tree.root
+    primary = getattr(getattr(host, "current_theme", None), "primary", "#7E9CD8")
     for part in folder_parts:
         node = _find_connection_folder_child(host, parent, part)
         if node is None:
-            node = parent.add(part)
+            node = parent.add(f"[{primary}]📁 {part}[/]")
             node.data = ConnectionFolderNode(name=part)
             node.allow_expand = True
         parent = node
@@ -469,11 +467,11 @@ def populate_connected_tree(host: TreeMixinHost) -> None:
         source_emoji = config.get_source_emoji() if hasattr(config, "get_source_emoji") else ""
         selected = getattr(host, "_selected_connection_names", set())
         selected_prefix = "[bright_cyan][x][/] " if config.name in selected else ""
-        favorite_prefix = "[bright_yellow]*[/] " if getattr(config, "favorite", False) else ""
         if connected:
-            name = f"{selected_prefix}{favorite_prefix}[#4ADE80]• {source_emoji}{escaped_name}[/]"
+            primary = getattr(getattr(host, "current_theme", None), "primary", "#7E9CD8")
+            name = f"{selected_prefix}[{primary}]{source_emoji}{escaped_name}[/]"
         else:
-            name = f"{selected_prefix}{favorite_prefix}{source_emoji}{escaped_name}"
+            name = f"{selected_prefix}{source_emoji}{escaped_name}"
         return f"{name} [{db_type_label}] ({display_info})"
 
     active_node = _find_connection_node(host, host.current_config)
@@ -500,7 +498,8 @@ def populate_connected_tree(host: TreeMixinHost) -> None:
                 add_database_object_nodes(host, active_node, specific_db)
                 active_node.expand()
             else:
-                dbs_node = active_node.add("Databases")
+                primary = getattr(getattr(host, "current_theme", None), "primary", "#7E9CD8")
+                dbs_node = active_node.add(f"[{primary}]📁 Databases[/]")
                 dbs_node.data = FolderNode(folder_type="databases")
                 dbs_node.allow_expand = True
                 active_node.expand()
@@ -524,11 +523,12 @@ def add_database_object_nodes(host: TreeMixinHost, parent_node: Any, database: s
 
     caps = host.current_provider.capabilities
     node_provider = host.current_provider.explorer_nodes
+    primary = getattr(getattr(host, "current_theme", None), "primary", "#7E9CD8")
 
     for folder in node_provider.get_root_folders(caps):
         if folder.requires(caps):
-            folder_node = parent_node.add(folder.label)
+            folder_node = parent_node.add(f"[{primary}]📁 {folder.label}[/]")
             folder_node.data = FolderNode(folder_type=folder.kind, database=database)
             folder_node.allow_expand = True
         else:
-            parent_node.add_leaf(f"[dim]{folder.label} (Not available)[/]")
+            parent_node.add_leaf(f"[dim]📁 {folder.label} (Not available)[/]")

@@ -90,7 +90,6 @@ def build_docker_options(
 ) -> list[Option]:
     options: list[Option] = []
 
-    favorite_options: list[Option] = []
     saved_options: list[Option] = []
     for conn in connections:
         if conn.source != "docker":
@@ -100,12 +99,8 @@ def build_docker_options(
             display = highlight_matches(conn.name, indices)
             db_type = conn.db_type.upper() if conn.db_type else "DB"
             info = get_connection_display_info(conn)
-            star = "[yellow]*[/] " if conn.favorite else "  "
-            option = Option(f"{star}docker {display} [{db_type}] [dim]({info})[/]", id=conn.name)
-            if conn.favorite:
-                favorite_options.append(option)
-            else:
-                saved_options.append(option)
+            option = Option(f"{display} [{db_type}] [dim]({info})[/]", id=conn.name)
+            saved_options.append(option)
 
     running_options: list[Option] = []
     exited_options: list[Option] = []
@@ -123,14 +118,14 @@ def build_docker_options(
                 if container.connectable:
                     running_options.append(
                         Option(
-                            f"docker {display} [{db_label}] [dim](localhost{port_info})[/]",
+                            f"{display} [{db_label}] [dim](localhost{port_info})[/]",
                             id=f"{DOCKER_PREFIX}{container.container_id}",
                         )
                     )
                 else:
                     running_options.append(
                         Option(
-                            f"docker {display} [{db_label}] [dim](not exposed)[/]",
+                            f"{display} [{db_label}] [dim](not exposed)[/]",
                             id=f"{DOCKER_PREFIX}{container.container_id}",
                             disabled=True,
                         )
@@ -138,15 +133,15 @@ def build_docker_options(
             else:
                 exited_options.append(
                     Option(
-                        f"[dim]docker {display} [{db_label}] (Stopped)[/]",
+                        f"[dim]{display} [{db_label}] (Stopped)[/]",
                         id=f"{DOCKER_PREFIX}{container.container_id}",
                     )
                 )
 
     options.append(Option("[bold]Saved[/]", id="_header_docker_saved", disabled=True))
 
-    if favorite_options or saved_options:
-        options.extend(favorite_options + saved_options)
+    if saved_options:
+        options.extend(saved_options)
     else:
         options.append(Option("[dim](no saved Docker connections)[/]", id="_empty_docker_saved", disabled=True))
 

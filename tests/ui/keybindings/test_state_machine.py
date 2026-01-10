@@ -122,7 +122,6 @@ class TestStateMachineActionValidation:
         left, _ = sm.get_display_bindings(ctx)
         actions = {b.action for b in left}
         assert "clear_connection_selection" in actions
-        assert "toggle_connection_favorite" in actions
         assert "move_connection_to_folder" in actions
         assert "delete_connection" in actions
 
@@ -138,7 +137,6 @@ class TestStateMachineActionValidation:
         left, _ = sm.get_display_bindings(ctx)
         actions = {b.action for b in left}
         assert "exit_tree_visual_mode" in actions
-        assert "toggle_connection_favorite" in actions
         assert "move_connection_to_folder" in actions
         assert "delete_connection" in actions
 

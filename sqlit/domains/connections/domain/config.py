@@ -126,7 +126,6 @@ class ConnectionConfig:
     tunnel: TunnelConfig | None = None
     source: str | None = None
     connection_url: str | None = None
-    favorite: bool = False
     folder_path: str = ""
     extra_options: dict[str, str] = field(default_factory=dict)
     options: dict[str, Any] = field(default_factory=dict)
@@ -218,7 +217,6 @@ class ConnectionConfig:
             "db_type",
             "source",
             "connection_url",
-            "favorite",
             "folder_path",
             "extra_options",
         }
@@ -230,10 +228,6 @@ class ConnectionConfig:
             else:
                 payload.pop(key)
 
-        raw_favorite = payload.get("favorite", False)
-        favorite = bool(raw_favorite)
-        if isinstance(raw_favorite, str):
-            favorite = raw_favorite.strip().lower() in {"1", "true", "yes", "y", "on"}
         folder_path = normalize_folder_path(payload.get("folder_path", ""))
 
         return cls(
@@ -243,7 +237,6 @@ class ConnectionConfig:
             tunnel=tunnel,
             source=payload.get("source"),
             connection_url=payload.get("connection_url"),
-            favorite=favorite,
             folder_path=folder_path,
             extra_options=dict(payload.get("extra_options") or {}),
             options=options,
@@ -311,7 +304,6 @@ class ConnectionConfig:
             "db_type": self.db_type,
             "source": self.source,
             "connection_url": self.connection_url,
-            "favorite": self.favorite,
             "folder_path": self.folder_path,
             "extra_options": dict(self.extra_options),
             "options": dict(self.options),
@@ -538,7 +530,7 @@ class ConnectionConfig:
 
 
 SOURCE_EMOJIS: dict[str, str] = {
-    "docker": "🐳 ",
+    "docker": "",
     "azure": "",
 }
 

@@ -75,7 +75,6 @@ class MockConfig:
     def __init__(self, name: str = "test_conn", database: str = ""):
         self.name = name
         self.db_type = "postgres"
-        self.favorite = False
         self.folder_path = ""
         self._endpoint = MockEndpoint(database=database)
 

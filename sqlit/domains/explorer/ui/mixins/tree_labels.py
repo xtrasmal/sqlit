@@ -36,22 +36,21 @@ class TreeLabelMixin:
         source_emoji = conn.get_source_emoji()
         selected = getattr(self, "_selected_connection_names", set())
         is_selected = getattr(conn, "name", None) in selected
-        favorite_prefix = "[bright_yellow]*[/] " if getattr(conn, "favorite", False) else ""
-
         if status == "connected":
+            primary = getattr(getattr(self, "current_theme", None), "primary", "#7E9CD8")
             label = (
-                f"{favorite_prefix}[#4ADE80]• {source_emoji}{escaped_name}[/]"
+                f"[{primary}]{source_emoji}{escaped_name}[/]"
                 f" [{db_type_label}] ({display_info})"
             )
         elif status == "connecting":
             frame = spinner or SPINNER_FRAMES[0]
             label = (
-                f"{favorite_prefix}[#FBBF24]{frame}[/] {source_emoji}{escaped_name}"
+                f"[#FBBF24]{frame}[/] {source_emoji}{escaped_name}"
                 " [dim italic]Connecting...[/]"
             )
         else:
             label = (
-                f"{favorite_prefix}{source_emoji}[dim]{escaped_name}[/dim]"
+                f"{source_emoji}{escaped_name}"
                 f" [{db_type_label}] ({display_info})"
             )
 
