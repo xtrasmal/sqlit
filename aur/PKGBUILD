@@ -12,7 +12,7 @@ replaces=('python-sqlit-tui')
 depends=(
     'python'
     'python-textual'
-    'python-textual-fastdatatable-latest'
+    'python-textual-fastdatatable'
     'python-pyperclip'
     'python-keyring'
     'python-docker'
