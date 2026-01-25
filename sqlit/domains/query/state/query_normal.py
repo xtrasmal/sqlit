@@ -38,6 +38,7 @@ class QueryNormalModeState(State):
         self.allows("cursor_find_char_back", help="Find char backward")
         self.allows("cursor_till_char", help="Move till char forward")
         self.allows("cursor_till_char_back", help="Move till char backward")
+        self.allows("prepend_insert_mode", help="Insert at line start")
         self.allows("append_insert_mode", help="Append after cursor")
         self.allows("append_line_end", help="Append at line end")
         # Vim open line

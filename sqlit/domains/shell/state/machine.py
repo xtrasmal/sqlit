@@ -185,7 +185,7 @@ class UIStateMachine:
         # ═══════════════════════════════════════════════════════════════════
         lines.append(section("QUERY EDITOR"))
         lines.append(subsection("Normal Mode:"))
-        lines.append(binding("i", "Enter INSERT mode"))
+        lines.append(binding("i/I", "Enter INSERT mode"))
         lines.append(binding("o/O", "Open line below/above"))
         lines.append(binding("C", "Change to line end"))
         lines.append(binding("D", "Delete to line end"))

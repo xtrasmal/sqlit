@@ -329,6 +329,7 @@ class DefaultKeymapProvider(KeymapProvider):
             ActionKeyDef("question_mark", "show_help", "global"),
             # Query (normal mode)
             ActionKeyDef("i", "enter_insert_mode", "query_normal"),
+            ActionKeyDef("I", "prepend_insert_mode", "query_normal"),
             ActionKeyDef("o", "open_line_below", "query_normal"),
             ActionKeyDef("O", "open_line_above", "query_normal"),
             ActionKeyDef("enter", "execute_query", "query_normal"),
