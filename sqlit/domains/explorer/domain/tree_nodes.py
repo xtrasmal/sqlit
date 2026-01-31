@@ -217,7 +217,7 @@ class ColumnNode:
         return "column"
 
     def get_node_path_part(self) -> str:
-        return ""
+        return f"column:{self.schema}.{self.table}.{self.name}"
 
 
 @dataclass(frozen=True)

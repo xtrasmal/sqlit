@@ -10,6 +10,8 @@ from rich.markup import escape as escape_markup
 from sqlit.domains.explorer.domain.tree_nodes import SchemaNode, TableNode, ViewNode
 from sqlit.shared.ui.protocols import TreeMixinHost
 
+from . import builder as tree_builder
+from . import expansion_state
 MIN_TIMER_DELAY_S = 0.001
 
 
@@ -35,6 +37,7 @@ def add_schema_grouped_items(
     has_multiple_schemas = len(sorted_schemas) > 1
     schema_nodes: dict[str, Any] = {}
     items_to_add: list[tuple[Any, str, str, str]] = []
+    expanded_paths = getattr(host, "_expanded_paths", set())
 
     for schema in sorted_schemas:
         schema_items = by_schema[schema]
@@ -51,6 +54,8 @@ def add_schema_grouped_items(
                     database=db_name, schema=schema or default_schema, folder_type=folder_type
                 )
                 schema_node.allow_expand = True
+                if expansion_state.get_node_path(host, schema_node) in expanded_paths:
+                    schema_node.expand()
                 schema_nodes[schema] = schema_node
             parent = schema_nodes[schema]
 
@@ -85,7 +90,10 @@ def add_schema_grouped_items(
             else:
                 child.data = ViewNode(database=db_name, schema=schema_name, name=obj_name)
             child.allow_expand = True
+            if expansion_state.get_node_path(host, child) in expanded_paths:
+                child.expand()
         idx = end
+        tree_builder.restore_pending_cursor(host)
         if idx < len(items_to_add):
             host.set_timer(MIN_TIMER_DELAY_S, render_batch)
 
