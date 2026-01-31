@@ -11,8 +11,8 @@ SCHEMA = ConnectionSchema(
     display_name="MotherDuck",
     fields=(
         SchemaField(
-            name="database",
-            label="Database",
+            name="default_database",
+            label="Default Database",
             placeholder="my_database",
             required=True,
         ),
@@ -24,6 +24,6 @@ SCHEMA = ConnectionSchema(
         ),
     ),
     supports_ssh=False,
-    is_file_based=False,  # Not file-based, uses database + token
+    is_file_based=False,
     requires_auth=True,
 )

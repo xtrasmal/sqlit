@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from sqlit.domains.connections.providers.adapters.base import TableInfo
 from sqlit.domains.connections.providers.duckdb.adapter import DuckDBAdapter
 
 if TYPE_CHECKING:
@@ -36,10 +37,8 @@ class MotherDuckAdapter(DuckDBAdapter):
             package_name=self.install_package,
         )
 
-        # Get database from options or tcp_endpoint
-        database = config.get_option("database", "")
-        if not database and config.tcp_endpoint:
-            database = config.tcp_endpoint.database
+        # Get default database from options
+        database = config.get_option("default_database", "")
 
         # Get token from tcp_endpoint.password (stored in keyring)
         token = ""
@@ -55,6 +54,51 @@ class MotherDuckAdapter(DuckDBAdapter):
 
         duckdb_any: Any = duckdb
         return duckdb_any.connect(conn_str)
+
+    def get_databases(self, conn: Any) -> list[str]:
+        """List all MotherDuck databases."""
+        result = conn.execute("SELECT database_name FROM duckdb_databases() WHERE NOT internal")
+        return [row[0] for row in result.fetchall()]
+
+    def get_tables(self, conn: Any, database: str | None = None) -> list[TableInfo]:
+        """Get tables from a specific MotherDuck database."""
+        if database:
+            result = conn.execute(
+                "SELECT table_schema, table_name FROM information_schema.tables "
+                "WHERE table_catalog = ? "
+                "AND table_type = 'BASE TABLE' "
+                "AND table_schema NOT IN ('pg_catalog', 'information_schema') "
+                "ORDER BY table_schema, table_name",
+                (database,),
+            )
+        else:
+            result = conn.execute(
+                "SELECT table_schema, table_name FROM information_schema.tables "
+                "WHERE table_type = 'BASE TABLE' "
+                "AND table_schema NOT IN ('pg_catalog', 'information_schema') "
+                "ORDER BY table_schema, table_name"
+            )
+        return [(row[0], row[1]) for row in result.fetchall()]
+
+    def get_views(self, conn: Any, database: str | None = None) -> list[TableInfo]:
+        """Get views from a specific MotherDuck database."""
+        if database:
+            result = conn.execute(
+                "SELECT table_schema, table_name FROM information_schema.tables "
+                "WHERE table_catalog = ? "
+                "AND table_type = 'VIEW' "
+                "AND table_schema NOT IN ('pg_catalog', 'information_schema') "
+                "ORDER BY table_schema, table_name",
+                (database,),
+            )
+        else:
+            result = conn.execute(
+                "SELECT table_schema, table_name FROM information_schema.tables "
+                "WHERE table_type = 'VIEW' "
+                "AND table_schema NOT IN ('pg_catalog', 'information_schema') "
+                "ORDER BY table_schema, table_name"
+            )
+        return [(row[0], row[1]) for row in result.fetchall()]
 
     def build_select_query(
         self, table: str, limit: int, database: str | None = None, schema: str | None = None
