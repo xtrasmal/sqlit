@@ -45,6 +45,16 @@ class QueryEditingCursorMixin:
         self._clear_leader_pending()
         self.action_execute_single_statement()
 
+    def action_g_execute_query(self: QueryMixinHost) -> None:
+        """Execute query via g menu (gr)."""
+        self._clear_leader_pending()
+        self.action_execute_query()
+
+    def action_g_execute_query_atomic(self: QueryMixinHost) -> None:
+        """Execute query as transaction via g menu (gt)."""
+        self._clear_leader_pending()
+        self.action_execute_query_atomic()
+
     def action_cursor_left(self: QueryMixinHost) -> None:
         """Move cursor left (h in normal mode)."""
         row, col = self.query_input.cursor_location

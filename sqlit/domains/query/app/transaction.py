@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from .multi_statement import MultiStatementResult
 from .query_service import KeywordQueryAnalyzer, NonQueryResult, QueryKind, QueryResult
 
 if TYPE_CHECKING:
@@ -254,25 +255,35 @@ class TransactionExecutor:
             rows_affected = self.provider.query_executor.execute_non_query(conn, sql)
             return NonQueryResult(rows_affected=rows_affected)
 
-    def atomic_execute(self, sql: str, max_rows: int | None = None) -> QueryResult | NonQueryResult:
+    def atomic_execute(
+        self, sql: str, max_rows: int | None = None
+    ) -> QueryResult | NonQueryResult | MultiStatementResult:
         """Execute SQL atomically (all-or-nothing).
 
         Wraps the SQL in BEGIN/COMMIT and rolls back on any error.
+        Supports multiple statements, returning results for each.
 
         Args:
             sql: SQL statement(s) to execute atomically.
             max_rows: Maximum rows to fetch for SELECT queries.
 
         Returns:
-            Result of the last statement.
+            For single statement: QueryResult or NonQueryResult.
+            For multiple statements: MultiStatementResult with all results.
 
         Raises:
             Exception: If any statement fails (after rollback).
         """
-        from .multi_statement import normalize_for_execution
+        from .multi_statement import (
+            MultiStatementResult,
+            StatementResult,
+            normalize_for_execution,
+            split_statements,
+        )
 
         # Normalize SQL: convert blank-line-separated to semicolon-separated
         sql = normalize_for_execution(sql)
+        statements = split_statements(sql)
 
         # Create a dedicated connection for this atomic operation
         conn = self.provider.connection_factory.connect(self.config)
@@ -285,16 +296,56 @@ class TransactionExecutor:
             # Start transaction
             self.provider.query_executor.execute_non_query(conn, "BEGIN")
 
-            # Execute the SQL
-            result = self._execute_on_connection(conn, sql, max_rows)
+            # Single statement - return simple result for backwards compatibility
+            if len(statements) <= 1:
+                result = self._execute_on_connection(conn, sql, max_rows)
+                self.provider.query_executor.execute_non_query(conn, "COMMIT")
+                return result
 
-            # Commit
+            # Multiple statements - execute each and collect results
+            results: list[StatementResult] = []
+            for i, statement in enumerate(statements):
+                try:
+                    result = self._execute_on_connection(conn, statement, max_rows)
+                    results.append(
+                        StatementResult(
+                            statement=statement,
+                            result=result,
+                            success=True,
+                            error=None,
+                        )
+                    )
+                except Exception as e:
+                    # Record the error
+                    results.append(
+                        StatementResult(
+                            statement=statement,
+                            result=None,
+                            success=False,
+                            error=str(e),
+                        )
+                    )
+                    # Rollback and return partial results
+                    try:
+                        self.provider.query_executor.execute_non_query(conn, "ROLLBACK")
+                    except Exception:
+                        pass
+                    return MultiStatementResult(
+                        results=results,
+                        completed=False,
+                        error_index=i,
+                    )
+
+            # All succeeded - commit
             self.provider.query_executor.execute_non_query(conn, "COMMIT")
-
-            return result
+            return MultiStatementResult(
+                results=results,
+                completed=True,
+                error_index=None,
+            )
 
         except Exception:
-            # Rollback on any error
+            # Rollback on any error (e.g., BEGIN or COMMIT failed)
             try:
                 self.provider.query_executor.execute_non_query(conn, "ROLLBACK")
             except Exception:

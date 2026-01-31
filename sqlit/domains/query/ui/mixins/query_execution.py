@@ -439,6 +439,7 @@ class QueryExecutionMixin(ProcessWorkerLifecycleMixin):
         import asyncio
         import time
 
+        from sqlit.domains.query.app.multi_statement import MultiStatementResult
         from sqlit.domains.query.app.query_service import QueryResult
         from sqlit.domains.query.app.transaction import TransactionExecutor
 
@@ -476,14 +477,21 @@ class QueryExecutionMixin(ProcessWorkerLifecycleMixin):
             except Exception:
                 pass
 
-            if isinstance(result, QueryResult):
+            if isinstance(result, MultiStatementResult):
+                # Multi-statement atomic execution
+                self._display_multi_statement_results(result, elapsed_ms)
+                if result.has_error:
+                    self.notify("Transaction rolled back (error in statement)", severity="error")
+                else:
+                    self.notify("Query executed atomically (committed)", severity="information")
+            elif isinstance(result, QueryResult):
                 await self._display_query_results(
                     result.columns, result.rows, result.row_count, result.truncated, elapsed_ms
                 )
+                self.notify("Query executed atomically (committed)", severity="information")
             else:
                 self._display_non_query_result(result.rows_affected, elapsed_ms)
-
-            self.notify("Query executed atomically (committed)", severity="information")
+                self.notify("Query executed atomically (committed)", severity="information")
 
         except Exception as e:
             self._display_query_error(f"Transaction rolled back: {e}")
