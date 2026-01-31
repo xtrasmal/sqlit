@@ -22,6 +22,11 @@ class MotherDuckAdapter(DuckDBAdapter):
         """MotherDuck handles concurrency server-side."""
         return True
 
+    @property
+    def supports_multiple_databases(self) -> bool:
+        """MotherDuck supports multiple databases."""
+        return True
+
     def connect(self, config: ConnectionConfig) -> Any:
         """Connect to MotherDuck cloud database."""
         duckdb = self._import_driver_module(

@@ -44,6 +44,14 @@ def test_motherduck_schema_uses_password_field():
     assert password_field.label == "Access Token"
 
 
+def test_motherduck_supports_multiple_databases():
+    """Test MotherDuck reports support for multiple databases."""
+    from sqlit.domains.connections.providers.motherduck.adapter import MotherDuckAdapter
+
+    adapter = MotherDuckAdapter()
+    assert adapter.supports_multiple_databases is True
+
+
 def test_motherduck_build_select_query_with_database():
     """Test MotherDuck uses three-part names (database.schema.table)."""
     from sqlit.domains.connections.providers.motherduck.adapter import MotherDuckAdapter
