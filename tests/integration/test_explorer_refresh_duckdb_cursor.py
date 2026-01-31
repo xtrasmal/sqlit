@@ -95,6 +95,16 @@ def _set_auto_expanded_paths(app: SSMSTUI, config_name: str) -> None:
     }
 
 
+def _find_table_in_tree(app: SSMSTUI, config_name: str, table_name: str) -> Any | None:
+    connected_node = find_connection_node(app.object_tree.root, config_name)
+    if connected_node is None:
+        return None
+    tables_folder = find_folder_node(connected_node, "tables")
+    if tables_folder is None:
+        return None
+    return find_table_node(tables_folder, table_name)
+
+
 async def _connect_and_expand(
     pilot: Any,
     app: SSMSTUI,
@@ -336,3 +346,57 @@ async def test_duckdb_refresh_keeps_cursor_on_column(tmp_path: Path, auto_expand
         assert cursor is not None
         assert isinstance(cursor.data, ColumnNode)
         assert cursor.data.name == "id"
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_duckdb_auto_refresh_after_create_table(tmp_path: Path) -> None:
+    db_path = tmp_path / "duckdb_auto_refresh.db"
+    _build_duckdb_db(db_path)
+
+    config = ConnectionConfig(
+        name="duckdb-auto-refresh",
+        db_type="duckdb",
+        file_path=str(db_path),
+    )
+
+    app = SSMSTUI()
+
+    async with app.run_test(size=(120, 40)) as pilot:
+        await pilot.pause(0.1)
+
+        tables_folder, _, _ = await _connect_and_expand(
+            pilot,
+            app,
+            config,
+            auto_expand=False,
+            allow_refresh_on_load=True,
+        )
+
+        assert find_table_node(tables_folder, "users") is not None
+        assert _find_table_in_tree(app, config.name, "users3") is None
+
+        before_token = getattr(app, "_tree_refresh_token", None)
+        app.query_input.text = "CREATE TABLE users3 (id INTEGER)"
+        app.action_execute_query()
+
+        await wait_for_condition(
+            pilot,
+            lambda: not getattr(app, "query_executing", False),
+            timeout_seconds=15.0,
+            description="query execution to finish",
+        )
+
+        await wait_for_condition(
+            pilot,
+            lambda: getattr(app, "_tree_refresh_token", None) is not before_token,
+            timeout_seconds=10.0,
+            description="tree refresh after DDL",
+        )
+
+        await wait_for_condition(
+            pilot,
+            lambda: _find_table_in_tree(app, config.name, "users3") is not None,
+            timeout_seconds=10.0,
+            description="new table to appear after auto refresh",
+        )
