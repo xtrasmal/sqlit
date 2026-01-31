@@ -276,12 +276,12 @@ def on_folder_loaded(
         active_db = None
         if hasattr(host, "_get_effective_database"):
             active_db = host._get_effective_database()
-        primary = getattr(getattr(host, "current_theme", None), "primary", "#7E9CD8")
         for db in items:
             if active_db and str(db).lower() == str(active_db).lower():
-                db_label = f"[#4ADE80]* {escape_markup(str(db))}[/]"
+                primary = getattr(getattr(host, "current_theme", None), "primary", "#7E9CD8")
+                db_label = f"[{primary}]* {escape_markup(str(db))}[/]"
             else:
-                db_label = f"[{primary}]{escape_markup(str(db))}[/]"
+                db_label = escape_markup(str(db))
             db_node = node.add(db_label)
             db_node.data = DatabaseNode(name=str(db))
             db_node.allow_expand = True

@@ -62,11 +62,10 @@ def _find_connection_folder_child(host: TreeMixinHost, parent: Any, name: str) -
 
 def _ensure_connection_folder_path(host: TreeMixinHost, folder_parts: list[str]) -> Any:
     parent = host.object_tree.root
-    primary = getattr(getattr(host, "current_theme", None), "primary", "#7E9CD8")
     for part in folder_parts:
         node = _find_connection_folder_child(host, parent, part)
         if node is None:
-            node = parent.add(f"[{primary}]📁 {part}[/]")
+            node = parent.add(f"📁 {escape_markup(part)}")
             node.data = ConnectionFolderNode(name=part)
             node.allow_expand = True
         parent = node
@@ -683,10 +682,9 @@ def add_database_object_nodes(host: TreeMixinHost, parent_node: Any, database: s
     caps = host.current_provider.capabilities
     node_provider = host.current_provider.explorer_nodes
 
-    primary = getattr(getattr(host, "current_theme", None), "primary", "#7E9CD8")
     for folder in node_provider.get_root_folders(caps):
         if folder.requires(caps):
-            folder_node = parent_node.add(f"[{primary}]{folder.label}[/]")
+            folder_node = parent_node.add(escape_markup(folder.label))
             folder_node.data = FolderNode(folder_type=folder.kind, database=database)
             folder_node.allow_expand = True
         else:

@@ -67,6 +67,14 @@ def update_expanded_state(host: TreeMixinHost, node: Any, expanded: bool) -> Non
     expanded_paths = getattr(host, "_expanded_paths", set())
     if expanded:
         expanded_paths.add(path)
+        if host._get_node_kind(node) == "database":
+            parent_path = path.rsplit("/", 1)[0] if "/" in path else ""
+            prefix = f"{parent_path}/db:" if parent_path else "db:"
+            for item in list(expanded_paths):
+                if item == path or item.startswith(f"{path}/"):
+                    continue
+                if item.startswith(prefix):
+                    expanded_paths.discard(item)
         host._expanded_paths = expanded_paths
         return
     expanded_paths.discard(path)

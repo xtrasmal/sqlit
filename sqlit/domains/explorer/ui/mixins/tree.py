@@ -62,6 +62,16 @@ class TreeMixin(TreeSchemaMixin, TreeLabelMixin):
             pass
         return None
 
+    def _collapse_other_database_nodes(self: TreeMixinHost, node: Any) -> None:
+        parent = getattr(node, "parent", None)
+        if not parent:
+            return
+        for sibling in list(parent.children):
+            if sibling is node:
+                continue
+            if self._get_node_kind(sibling) == "database" and getattr(sibling, "is_expanded", False):
+                sibling.collapse()
+
     def on_tree_node_collapsed(self: TreeMixinHost, event: Tree.NodeCollapsed) -> None:
         """Save state when a node is collapsed."""
         tree_expansion_state.update_expanded_state(self, event.node, expanded=False)
@@ -80,6 +90,7 @@ class TreeMixin(TreeSchemaMixin, TreeLabelMixin):
         data = node.data
 
         if self._get_node_kind(node) == "database":
+            self._collapse_other_database_nodes(node)
             self._ensure_database_connection_async(data.name)
 
         if self._get_node_kind(node) == "connection":
