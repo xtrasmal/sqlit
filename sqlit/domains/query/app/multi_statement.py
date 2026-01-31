@@ -257,6 +257,19 @@ def find_statement_at_cursor(sql: str, row: int, col: int) -> tuple[str, int, in
     return ranges[0] if ranges else None
 
 
+def _is_comment_only(statement: str) -> bool:
+    """Check if a statement contains only comments (no actual SQL).
+
+    A statement is comment-only if all non-empty lines start with --.
+    """
+    lines = statement.strip().split("\n")
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("--"):
+            return False
+    return True
+
+
 def split_statements(sql: str) -> list[str]:
     """Split SQL into individual statements.
 
@@ -401,6 +414,10 @@ class MultiStatementExecutor:
             MultiStatementResult containing results from all executed statements.
         """
         statements = split_statements(sql)
+
+        # Filter out comment-only statements - they cause "empty query" errors
+        # in some database drivers that strip comments before execution
+        statements = [s for s in statements if not _is_comment_only(s)]
 
         if not statements:
             return MultiStatementResult(results=[], completed=True, error_index=None)

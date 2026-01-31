@@ -277,6 +277,7 @@ class TransactionExecutor:
         from .multi_statement import (
             MultiStatementResult,
             StatementResult,
+            _is_comment_only,
             normalize_for_execution,
             split_statements,
         )
@@ -284,6 +285,9 @@ class TransactionExecutor:
         # Normalize SQL: convert blank-line-separated to semicolon-separated
         sql = normalize_for_execution(sql)
         statements = split_statements(sql)
+
+        # Filter out comment-only statements
+        statements = [s for s in statements if not _is_comment_only(s)]
 
         # Create a dedicated connection for this atomic operation
         conn = self.provider.connection_factory.connect(self.config)
