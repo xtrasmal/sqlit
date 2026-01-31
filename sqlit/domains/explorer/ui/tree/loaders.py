@@ -20,6 +20,7 @@ from sqlit.domains.explorer.domain.tree_nodes import (
 )
 from sqlit.shared.ui.protocols import TreeMixinHost
 
+from . import builder as tree_builder
 from . import expansion_state, schema_render
 
 MIN_TIMER_DELAY_S = 0.001
@@ -49,6 +50,46 @@ def clear_loading_state(host: TreeMixinHost, node: Any) -> None:
     loading_nodes = ensure_loading_nodes(host)
     loading_nodes.discard(node_path)
     remove_loading_placeholders(host, node)
+
+
+def _should_load_expanded_node(host: TreeMixinHost, node: Any) -> bool:
+    if not getattr(node, "data", None):
+        return False
+    if not getattr(node, "is_expanded", False):
+        return False
+    if host.current_connection is None or host.current_provider is None:
+        return False
+    kind = host._get_node_kind(node)
+    if kind not in ("folder", "table", "view"):
+        return False
+    children = list(node.children)
+    if children:
+        if len(children) == 1 and host._get_node_kind(children[0]) == "loading":
+            return False
+        if host._get_node_kind(children[0]) != "loading":
+            return False
+    node_path = expansion_state.get_node_path(host, node)
+    if not node_path:
+        return False
+    loading_nodes = ensure_loading_nodes(host)
+    if node_path in loading_nodes:
+        return False
+    loading_nodes.add(node_path)
+    add_loading_placeholder(host, node)
+    if kind in ("table", "view"):
+        host._load_columns_async(node, node.data)
+    else:
+        host._load_folder_async(node, node.data)
+    return True
+
+
+def ensure_expanded_nodes_loaded(host: TreeMixinHost, root: Any) -> None:
+    """Ensure expanded nodes trigger loading when restored programmatically."""
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        _should_load_expanded_node(host, node)
+        stack.extend(reversed(getattr(node, "children", [])))
 
 
 def load_columns_async(host: TreeMixinHost, node: Any, data: TableNode | ViewNode) -> None:
@@ -147,6 +188,7 @@ def on_columns_loaded(
             child = node.add_leaf(f"[dim]{col_name}[/] [italic dim]{col_type}[/]")
             child.data = ColumnNode(database=db_name, schema=schema_name, table=obj_name, name=col.name)
         idx = end
+        tree_builder.restore_pending_cursor(host)
         if idx < total:
             host.set_timer(MIN_TIMER_DELAY_S, render_batch)
 
@@ -234,8 +276,6 @@ def on_folder_loaded(
         active_db = None
         if hasattr(host, "_get_effective_database"):
             active_db = host._get_effective_database()
-        from . import builder as tree_builder
-
         primary = getattr(getattr(host, "current_theme", None), "primary", "#7E9CD8")
         for db in items:
             if active_db and str(db).lower() == str(active_db).lower():
@@ -253,6 +293,11 @@ def on_folder_loaded(
         schema_render.add_schema_grouped_items(
             host, node, db_name, folder_type, items, provider.capabilities.default_schema
         )
+        expansion_state.restore_subtree_expansion_with_paths(
+            host, node, getattr(host, "_expanded_paths", set())
+        )
+        ensure_expanded_nodes_loaded(host, node)
+        tree_builder.restore_pending_cursor(host)
         return
 
     for item in items:
@@ -270,6 +315,7 @@ def on_folder_loaded(
         elif item[0] == "sequence":
             child = node.add_leaf(escape_markup(item[1]))
             child.data = SequenceNode(database=db_name, name=item[1])
+    tree_builder.restore_pending_cursor(host)
 
 
 def on_tree_load_error(host: TreeMixinHost, node: Any, error_message: str) -> None:
