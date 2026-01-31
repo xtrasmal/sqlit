@@ -11,7 +11,7 @@ def _display_info(config) -> str:
     database = config.get_option("database", "") or config.database or ""
     if database:
         return f"md:{database}"
-    return "md: (default)"
+    return "MotherDuck"
 
 
 def _provider_factory(spec: ProviderSpec) -> DatabaseProvider:
@@ -25,7 +25,7 @@ SPEC = ProviderSpec(
     display_name="MotherDuck",
     schema_path=("sqlit.domains.connections.providers.motherduck.schema", "SCHEMA"),
     supports_ssh=False,
-    is_file_based=True,  # Use file-based URL parsing (motherduck:///database)
+    is_file_based=False,
     has_advanced_auth=False,
     default_port="",
     requires_auth=True,

@@ -31,15 +31,15 @@ class MotherDuckAdapter(DuckDBAdapter):
             package_name=self.install_package,
         )
 
-        # Get database from file_path
-        database = ""
-        if config.file_endpoint and config.file_endpoint.path:
-            database = config.file_endpoint.path.lstrip("/")
+        # Get database from options or tcp_endpoint
+        database = config.get_option("database", "")
+        if not database and config.tcp_endpoint:
+            database = config.tcp_endpoint.database
 
-        # Get token from extra_options (URL) or options (UI)
-        token = config.extra_options.get("motherduck_token", "")
-        if not token:
-            token = config.get_option("motherduck_token", "")
+        # Get token from tcp_endpoint.password (stored in keyring)
+        token = ""
+        if config.tcp_endpoint:
+            token = config.tcp_endpoint.password or ""
 
         if not database:
             raise ValueError("MotherDuck connections require a database name.")
