@@ -127,15 +127,14 @@ class QueryNormalModeState(State):
         )
         seen.add("new_query")
 
-        right: list[DisplayBinding] = []
         if self.parent:
-            _, parent_right = self.parent.get_display_bindings(app)
-            for binding in parent_right:
+            parent_left, _ = self.parent.get_display_bindings(app)
+            for binding in parent_left:
                 if binding.action not in seen:
-                    right.append(binding)
+                    left.append(binding)
                     seen.add(binding.action)
 
-        return left, right
+        return left, []
 
     def is_active(self, app: InputContext) -> bool:
         return app.focus == "query" and app.vim_mode == VimMode.NORMAL

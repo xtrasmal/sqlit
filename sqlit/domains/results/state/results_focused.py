@@ -32,10 +32,10 @@ class ResultsFocusedState(State):
     def get_display_bindings(self, app: InputContext) -> tuple[list[DisplayBinding], list[DisplayBinding]]:
         # No bindings when there are no results
         if not app.has_results:
-            right: list[DisplayBinding] = []
+            left: list[DisplayBinding] = []
             if self.parent:
-                _, right = self.parent.get_display_bindings(app)
-            return [], right
+                left, _ = self.parent.get_display_bindings(app)
+            return left, []
 
         left: list[DisplayBinding] = []
         seen: set[str] = set()
@@ -136,15 +136,14 @@ class ResultsFocusedState(State):
             ]
         )
 
-        right_bindings: list[DisplayBinding] = []
         if self.parent:
-            _, parent_right = self.parent.get_display_bindings(app)
-            for binding in parent_right:
+            parent_left, _ = self.parent.get_display_bindings(app)
+            for binding in parent_left:
                 if binding.action not in seen:
-                    right_bindings.append(binding)
+                    left.append(binding)
                     seen.add(binding.action)
 
-        return left, right_bindings
+        return left, []
 
     def is_active(self, app: InputContext) -> bool:
         return app.focus == "results"
