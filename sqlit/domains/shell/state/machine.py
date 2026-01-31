@@ -310,5 +310,14 @@ class UIStateMachine:
         lines.append(section("COMMAND MODE"))
         lines.append(binding(":", "Enter command mode"))
         lines.append(binding(":commands", "Show command list"))
+        lines.append("")
+
+        # ═══════════════════════════════════════════════════════════════════
+        # SETTINGS
+        # ═══════════════════════════════════════════════════════════════════
+        lines.append(section("SETTINGS"))
+        lines.append(binding(":alert off|delete|write", "Confirm risky queries"))
+        lines.append(binding("settings.json: show_line_numbers", "Show line numbers in query editor"))
+        lines.append(binding("settings.json: relative_line_numbers", "Relative line numbers in query editor"))
 
         return "\n".join(lines)
