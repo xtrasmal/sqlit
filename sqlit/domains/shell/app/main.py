@@ -660,18 +660,18 @@ class SSMSTUI(
         if cmd == "set" and args:
             target = args[0].lower().replace("-", "_")
             value = args[1].lower() if len(args) > 1 else ""
-            # Line number settings (vim-style)
-            if target in {"number", "nu"}:
-                self._set_line_numbers(True)
-                return
-            if target in {"nonumber", "nonu"}:
-                self._set_line_numbers(False)
-                return
-            if target in {"relativenumber", "rnu"}:
-                self._set_relative_line_numbers(True)
-                return
-            if target in {"norelativenumber", "nornu"}:
-                self._set_relative_line_numbers(False)
+            # Line number settings
+            if target in {"ln", "linenumbers"}:
+                if value in {"on", "1", "true", "yes"}:
+                    self._set_line_numbers(True)
+                    self._set_relative_line_numbers(False)
+                elif value in {"off", "0", "false", "no"}:
+                    self._set_line_numbers(False)
+                elif value in {"relative", "rel"}:
+                    self._set_line_numbers(True)
+                    self._set_relative_line_numbers(True)
+                else:
+                    self.notify("Usage: :set ln on|off|relative", severity="warning")
                 return
             if target in {"process_worker"}:
                 if not value:
@@ -764,10 +764,7 @@ class SSMSTUI(
                 "Go to line with count prefix",
                 "In NORMAL mode, type a number then G to go to that line (e.g., 25G).",
             ),
-            ("Editor", ":set number, :set nu", "Show line numbers", ""),
-            ("Editor", ":set nonumber, :set nonu", "Hide line numbers", ""),
-            ("Editor", ":set relativenumber, :set rnu", "Show relative line numbers", ""),
-            ("Editor", ":set norelativenumber, :set nornu", "Show absolute line numbers", ""),
+            ("Editor", ":set ln on|off|relative", "Line numbers", ""),
             (
                 "Worker",
                 ":process-worker, :worker",
