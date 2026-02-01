@@ -151,6 +151,16 @@ class UIStateMachine:
         lines: list[str] = []
 
         # ═══════════════════════════════════════════════════════════════════
+        # GLOBAL
+        # ═══════════════════════════════════════════════════════════════════
+        lines.append(section("GLOBAL"))
+        lines.append(binding(":q", "Quit"))
+        lines.append(binding(f"{leader_key}t", "Change theme"))
+        lines.append(binding(f"{leader_key}f", "Toggle fullscreen pane"))
+        lines.append(binding(f"{leader_key}e", "Toggle explorer visibility"))
+        lines.append("")
+
+        # ═══════════════════════════════════════════════════════════════════
         # NAVIGATION
         # ═══════════════════════════════════════════════════════════════════
         lines.append(section("NAVIGATION"))
@@ -291,17 +301,6 @@ class UIStateMachine:
         lines.append(binding("d", "Delete connection"))
         lines.append(binding("D", "Duplicate connection"))
         lines.append(binding("<esc>", "Close picker"))
-        lines.append("")
-
-        # ═══════════════════════════════════════════════════════════════════
-        # GLOBAL
-        # ═══════════════════════════════════════════════════════════════════
-        lines.append(section("GLOBAL"))
-        lines.append(binding("^q", "Quit"))
-        lines.append(binding(f"{leader_key}q", "Quit (from menu)"))
-        lines.append(binding(f"{leader_key}t", "Change theme"))
-        lines.append(binding(f"{leader_key}f", "Toggle fullscreen pane"))
-        lines.append(binding(f"{leader_key}e", "Toggle explorer visibility"))
         lines.append("")
 
         # ═══════════════════════════════════════════════════════════════════
